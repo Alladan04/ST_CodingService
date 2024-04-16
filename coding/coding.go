@@ -2,7 +2,6 @@ package coding
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"math/bits"
 	"math/rand"
@@ -83,9 +82,9 @@ func decode(data []byte) byte {
 			data[i] = data[i] >> 3
 		} else {
 			data[i] = fixMistake(res, data[i]) >> 3
-			fmt.Println("res: ", res, " buf: ", buf, " pol: ", pol)
-			fmt.Printf("mistake syndrom :%b \n", res)
-			fmt.Printf("%d fixed mistake:%b - %c \n", i, data[i], data[i])
+			//fmt.Println("res: ", res, " buf: ", buf, " pol: ", pol)
+			//fmt.Printf("mistake syndrom :%b \n", res)
+			//fmt.Printf("%d fixed mistake:%b - %c \n", i, data[i], data[i])
 		}
 
 	}
@@ -119,25 +118,19 @@ func ProcessMessage(msg string) (res string, err error) {
 	var processedMsg []byte
 	var data []byte
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	if r.Intn(100)%20 == 0 {
+	if r.Intn(100)%20 == 0 { //вероятность потери сообщения 2%
+
 		return "", errors.New("lost message")
 	}
-	fmt.Println("MESSAGE ", msg)
 
 	for i := 0; i < len(msg); i++ {
 		data = encode(msg[i])
-		fmt.Println("BYTE NUMBER ", i)
-		fmt.Printf("initial data: %08b - %c \n", msg[i], msg[i])
-		fmt.Printf("encoded data 1: %b \n", data[0])
-		fmt.Printf("encoded data 2: %b \n", data[1])
+
 		data[0] = makeMistake(data[0])
 		data[1] = makeMistake(data[1])
-		fmt.Printf("made mistake:%b,  %b \n", data[0], data[1])
 		decodedData := decode(data)
 		processedMsg = append(processedMsg, decodedData)
-		fmt.Printf("decoded data: %08b - %c\n", decodedData, decodedData)
 	}
-	fmt.Println(processedMsg)
-	fmt.Println(string(processedMsg))
+
 	return string(processedMsg), nil
 }
