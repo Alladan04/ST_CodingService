@@ -15,7 +15,15 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+
+	anotherRand "golang.org/x/exp/rand"
 )
+
+var randSrc anotherRand.Source
+
+func init() {
+	randSrc = anotherRand.NewSource(uint64(time.Now().UnixMicro()))
+}
 
 type DATA struct {
 	Id            int    `json:"socket_id,omitempty"`
@@ -30,7 +38,7 @@ type DATA struct {
 func SendCodeRequest(body DATA) {
 	reqBody, _ := json.Marshal(body)
 
-	req, _ := http.NewRequest("POST", "http://192.168.146.106:8080/transfer", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", "http://172.16.95.192:8080/transfer", bytes.NewBuffer(reqBody))
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", strconv.Itoa(len(reqBody)))
 
@@ -54,15 +62,16 @@ func SendCodeRequest(body DATA) {
 // @Success 200
 // @Router /code [post]
 func CodeHandler(c *gin.Context) {
+
 	var data DATA
 	err := c.BindJSON(&data)
 	if err != nil {
 		log.Println("ERROR__", err)
 		fmt.Println(time.Now())
 	}
-	msg, _ := coding.ProcessMessage(data.Data)
+	msg, err := coding.ProcessMessage(data.Data, randSrc)
 	if err != nil {
-		fmt.Println("lost message")
+		fmt.Println("Сообщение утеряно")
 
 	} else {
 		data.Data = msg

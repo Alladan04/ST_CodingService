@@ -2,10 +2,14 @@ package coding
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/bits"
 	"math/rand"
+	"st/norm"
 	"time"
+
+	anotherRand "golang.org/x/exp/rand"
 )
 
 func fixMistake(mistake byte, data byte) byte {
@@ -104,6 +108,7 @@ func encode(data byte) (result []byte) {
 
 }
 func makeMistake(data byte) (result byte) {
+
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	num := r.Intn(100) % 10
 
@@ -114,23 +119,37 @@ func makeMistake(data byte) (result byte) {
 
 	return data
 }
-func ProcessMessage(msg string) (res string, err error) {
+func ProcessMessage(msg string, randSrc anotherRand.Source) (res string, err error) {
+
+	errorPos := norm.GenerateNormalInt(0, min(len(msg), 100), 130/8, 13, randSrc)
+
 	var processedMsg []byte
 	var data []byte
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if r.Intn(100)%20 == 0 { //вероятность потери сообщения 2%
-
+		fmt.Println("lost message ")
 		return "", errors.New("lost message")
 	}
-
+	encodedMsg := []byte{}
+	messageWithErrors := []byte{}
+	decodedMessage := []byte{}
 	for i := 0; i < len(msg); i++ {
 		data = encode(msg[i])
+		encodedMsg = append(encodedMsg, data...)
+		if i == errorPos {
+			data[0] = makeMistake(data[0])
+			data[1] = makeMistake(data[1])
+		}
 
-		data[0] = makeMistake(data[0])
-		data[1] = makeMistake(data[1])
+		messageWithErrors = append(messageWithErrors, data...)
 		decodedData := decode(data)
+		decodedMessage = append(decodedMessage, decodedData)
 		processedMsg = append(processedMsg, decodedData)
 	}
+	fmt.Println("Исходное сообщение: ", msg)
+	fmt.Println("Закодированное сообщение: ", string(encodedMsg))
+	fmt.Println("Сообщение с ошибкой: ", string(messageWithErrors))
+	fmt.Println("Декодированное сообщение: ", string(decodedMessage))
 
 	return string(processedMsg), nil
 }
